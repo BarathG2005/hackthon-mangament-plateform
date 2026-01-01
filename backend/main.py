@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
-from routes import admin, auth
+from routes import admin, auth, hackathon
 from config.settings import settings
 
 # Configure HTTPBearer security for Swagger UI
@@ -29,6 +29,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(admin.router)
+app.include_router(hackathon.router)
 
 @app.get("/")
 def root():

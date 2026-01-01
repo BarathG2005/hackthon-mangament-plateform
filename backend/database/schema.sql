@@ -58,3 +58,68 @@ COMMENT ON COLUMN college_users.college_id IS 'Unique college ID or roll number'
 COMMENT ON COLUMN college_users.auth_user_id IS 'Links to Supabase auth.users table, NULL until account is activated';
 COMMENT ON COLUMN college_users.role IS 'User role: admin, principal, hod, teacher, or student';
 COMMENT ON COLUMN college_users.is_active IS 'Whether the account is active';
+
+-- Hackathons posted by staff
+CREATE TABLE IF NOT EXISTS hackathons (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    link TEXT NOT NULL,
+    domain TEXT,
+    deadline TIMESTAMP WITH TIME ZONE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_by_college_id VARCHAR(50) REFERENCES college_users(college_id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_hackathons_deadline ON hackathons(deadline);
+CREATE INDEX IF NOT EXISTS idx_hackathons_active ON hackathons(is_active);
+
+-- Student registrations per hackathon
+CREATE TABLE IF NOT EXISTS hackathon_registrations (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    hackathon_id UUID REFERENCES hackathons(id) ON DELETE CASCADE,
+    student_college_id VARCHAR(50) REFERENCES college_users(college_id) ON DELETE CASCADE,
+    link_submission TEXT,
+    notes TEXT,
+    status TEXT DEFAULT 'applied' CHECK (status IN ('applied','acknowledged','rejected')),
+    acknowledged_by VARCHAR(50) REFERENCES college_users(college_id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_hackathon_registrations_hackathon ON hackathon_registrations(hackathon_id);
+CREATE INDEX IF NOT EXISTS idx_hackathon_registrations_student ON hackathon_registrations(student_college_id);
+CREATE INDEX IF NOT EXISTS idx_hackathon_registrations_status ON hackathon_registrations(status);
+
+-- Triggers for updated_at
+CREATE TRIGGER update_hackathons_updated_at
+    BEFORE UPDATE ON hackathons
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_hackathon_registrations_updated_at
+    BEFORE UPDATE ON hackathon_registrations
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable RLS
+ALTER TABLE hackathons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hackathon_registrations ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+-- Hackathons: anyone authenticated can view, service role can do all
+CREATE POLICY "Hackathons select for authenticated" ON hackathons
+    FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Hackathons service role all" ON hackathons
+    FOR ALL USING (auth.role() = 'service_role');
+
+-- Registrations: students can view/insert own, service role all
+CREATE POLICY "Registrations select own" ON hackathon_registrations
+    FOR SELECT USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "Registrations insert own" ON hackathon_registrations
+    FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+CREATE POLICY "Registrations service role all" ON hackathon_registrations
+    FOR ALL USING (auth.role() = 'service_role');

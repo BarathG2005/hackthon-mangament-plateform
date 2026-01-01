@@ -1,26 +1,26 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from models.user import AddUserRequest, UserResponse, UserRole
 from services.auth import AuthService
-from dependencies.auth import require_admin, require_admin_or_principal, get_current_user
+from dependencies.auth import (
+    require_admin,
+    require_admin_or_principal,
+    require_admin_principal_hod,
+    require_admin_principal_hod_teacher,
+    get_current_user,
+)
 from config.supabase import supabase
 from typing import List
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
-@router.post("/add-user", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def add_user(user_data: AddUserRequest,current_user: dict = Depends(require_admin)):
-  
-    new_user = AuthService.add_user(user_data)
-    return UserResponse(**new_user)
-
 @router.post("/add-student", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def add_student(
     user_data: AddUserRequest,
-    current_user: dict = Depends(require_admin)
+    current_user: dict = Depends(require_admin_principal_hod_teacher)
 ):
     """
     Convenience endpoint for adding students
-    Only accessible by admin
+    Accessible by admin, principal, HOD, or teacher
     """
     # Force role to be student
     user_data.role = UserRole.STUDENT
@@ -30,11 +30,11 @@ def add_student(
 @router.post("/add-teacher", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def add_teacher(
     user_data: AddUserRequest,
-    current_user: dict = Depends(require_admin_or_principal)
+    current_user: dict = Depends(require_admin_principal_hod)
 ):
     """
     Endpoint for adding teachers
-    Accessible by admin or principal
+    Accessible by admin, principal, or HOD
     """
     # Force role to be teacher
     user_data.role = UserRole.TEACHER

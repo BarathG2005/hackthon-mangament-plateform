@@ -130,3 +130,27 @@ def require_admin_or_hod(current_user: dict = Depends(get_current_user)):
             detail="Admin or HOD access required"
         )
     return current_user
+
+# Combined role dependencies for creation permissions
+def require_admin_principal_hod(current_user: dict = Depends(get_current_user)):
+    """Allow admin, principal, or HOD"""
+    if current_user.get("role") not in [UserRole.ADMIN.value, UserRole.PRINCIPAL.value, UserRole.HOD.value]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin, Principal, or HOD access required"
+        )
+    return current_user
+
+def require_admin_principal_hod_teacher(current_user: dict = Depends(get_current_user)):
+    """Allow admin, principal, HOD, or teacher"""
+    if current_user.get("role") not in [
+        UserRole.ADMIN.value,
+        UserRole.PRINCIPAL.value,
+        UserRole.HOD.value,
+        UserRole.TEACHER.value,
+    ]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin, Principal, HOD, or Teacher access required"
+        )
+    return current_user

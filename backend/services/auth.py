@@ -167,7 +167,8 @@ class AuthService:
                 )
             
             # Step 6: Link auth_user_id to college_users
-            supabase.table("college_users").update({
+            # Use service-role client to bypass RLS when writing auth_user_id
+            supabase_admin.table("college_users").update({
                 "auth_user_id": auth_response.user.id
             }).eq("college_id", activation_data.college_id).execute()
             
