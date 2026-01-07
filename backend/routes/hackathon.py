@@ -5,6 +5,7 @@ from models.hackathon import (
     HackathonResponse,
     HackathonRegistrationCreate,
     HackathonRegistrationResponse,
+    HackathonStatsResponse,
 )
 from services.hackathon import HackathonService
 from dependencies.auth import (
@@ -71,3 +72,12 @@ def acknowledge_registration(
 ):
     updated = HackathonService.acknowledge_registration(registration_id, current_user, status_value, note)
     return HackathonRegistrationResponse(**updated)
+
+
+@router.get("/{hackathon_id}/stats", response_model=HackathonStatsResponse)
+def hackathon_stats(
+    hackathon_id: str,
+    current_user: dict = Depends(require_admin_principal_hod_teacher),
+):
+    stats = HackathonService.get_hackathon_stats(hackathon_id)
+    return HackathonStatsResponse(**stats)

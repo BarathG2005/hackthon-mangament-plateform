@@ -10,19 +10,34 @@ class HackathonCreate(BaseModel):
     domain: Optional[str] = None
     deadline: Optional[datetime] = None
     is_active: bool = True
+    source: str = "manual"
+    suggested_by_model: Optional[str] = None
+
+
+class HackathonAISuggest(BaseModel):
+    title: str
+    description: Optional[str] = None
+    link: HttpUrl
+    domain: Optional[str] = None
+    deadline: Optional[datetime] = None
+    suggested_by_model: Optional[str] = None
 
 
 class HackathonResponse(BaseModel):
     id: str
     title: str
-    description: Optional[str]
+    description: Optional[str] = None
     link: HttpUrl
-    domain: Optional[str]
-    deadline: Optional[datetime]
+    domain: Optional[str] = None
+    deadline: Optional[datetime] = None
     is_active: bool
-    created_by_college_id: Optional[str]
+    approval_status: str
+    approved_by: Optional[str] = None
+    source: Optional[str] = None
+    suggested_by_model: Optional[str] = None
+    created_by_college_id: Optional[str] = None
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: Optional[datetime] = None
 
 
 class HackathonRegistrationCreate(BaseModel):
@@ -40,3 +55,18 @@ class HackathonRegistrationResponse(BaseModel):
     acknowledged_by: Optional[str]
     created_at: datetime
     updated_at: Optional[datetime]
+
+
+class HackathonDepartmentStats(BaseModel):
+    department: Optional[str]
+    registered: int
+    remaining: int
+    total_students: int
+
+
+class HackathonStatsResponse(BaseModel):
+    hackathon_id: str
+    title: Optional[str]
+    total_registered: int
+    per_department: List[HackathonDepartmentStats]
+    last_updated: datetime

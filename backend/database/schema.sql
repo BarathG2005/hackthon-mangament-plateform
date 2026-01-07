@@ -123,3 +123,13 @@ CREATE POLICY "Registrations insert own" ON hackathon_registrations
 
 CREATE POLICY "Registrations service role all" ON hackathon_registrations
     FOR ALL USING (auth.role() = 'service_role');
+
+-- Approval workflow fields for hackathons
+ALTER TABLE hackathons
+    ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'manual',
+    ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'approved' CHECK (approval_status IN ('pending','approved','rejected')),
+    ADD COLUMN IF NOT EXISTS approved_by VARCHAR(50) REFERENCES college_users(college_id) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS suggested_by_model TEXT;
+
+-- Ensure existing rows are marked approved
+UPDATE hackathons SET approval_status = COALESCE(approval_status, 'approved'), source = COALESCE(source, 'manual') WHERE approval_status IS NULL OR source IS NULL;
